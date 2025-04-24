@@ -1,0 +1,137 @@
+This project will create a messaging middleware service implemented with kafka. 
+A top requirement is that this is a light and simple to admin implementation of kafka
+The context is an early stage project that has a next.js web application, a node express api, a mysql 8 database, an etl service. All four are running in separate processes in separate docker containers. 
+This middleware service will be used initially in the following business case: a user using the web app clicks a "start this etl job" button which through a yet to be determine series of api calls will trigger a job in the etl server asychronously. the requirement is for the middleware to be aware or told that the etl job has succeeded or failed and related information, and the middleware will provide this information to the web app user showing the completion and status. 
+A simple and flexible implementation is required because the team has minimal experience with kafka and just wants a reliable basic easy to monitor system with a light resource footprint.
+The service will run in peroduction in a docker container called bor-message
+System port scheme:
+container      dev   stage prod  docker-internal
+-----------------------------------------------
+bor-app        4400  4500  4600  3000
+bor-api        4410  4510  4610  4000
+bor-db         4420  4520  4620  3306
+bof-message    4430  4530  4630  9092 ** this container/service
+bor-workflow   4440  4540  4640  8080
+bor-etl        4450  4550  4650  8888
+bor-svc-calc   4460  4560  4660  5000
+
+Technology, general:
+- This project will create a kafka messaging service. 
+- A docker network called 'bor-network' is used for interserice communication between this and other docker containers in the system.
+- the project will use modern, best practices, and industry standard technologies for web application architecture and development.
+- the project will use the latest version of kafka and related technologies.
+
+
+## technical details 
+This project will be developed to a high standard of quality but will favour simplicity over sophistication in design and implementation.
+Advice and input from AI will be given as an expert professional using industry best practices for the technologies used. 
+All secrets will be stored in .env files using standard techniques for the technologies used. .env files will follow this naming convention:
+- .env
+- .env.development
+- .env.development.local
+- .env.production
+- .env.production.local
+
+## technologies used
+- Typescript
+- Kafka
+- Docker
+- Git
+- Github and github actions for CI/CD to production
+- Application access will be protected with a RBAC (Role Based Access Control) mechanism using the Prisma tables: 
+    . Account
+    . Session
+    . PrismaUser
+    . VerificationToken
+    . Role
+    . Permission
+    . UserRole
+    . RolePermission
+    . AuthActivity
+    ** Note: the above database tables have been created in the 'bor' database (running in bor-db) and seeded, removing the need for prisma push/pull. 
+- 
+
+## developer details
+You are a senior, experiences full stack system architect, designer and developer with years of production code in the above listed technologies. 
+You have experience in data-centric environments including data management, etl, data validation, data processing. 
+You follow industry best practices. 
+You take pride in the quality of your work. 
+You are technically competent but prefer simple implementations. 
+You carefully consider tradeoffs to be made during design decisions. 
+
+
+## RBAC considerations
+
+
+## testing 
+tbd 
+
+## deployment 
+The project will be deployed using standard Docker techniques, but not using Docker Compose which is not supported in some target environments.
+The project will be deployed using a CI/CD pipeline to a target environment.
+ # to ensure prod has all of the .env files, some of which are .gitignored 
+scp bor-db/.env* robmenning.com@xenodochial-turing.108-175-7-118.plesk.page:/var/www/vhosts/robmenning.com/bor/bor-db/
+scp bor-api/.env* robmenning.com@xenodochial-turing.108-175-7-118.plesk.page:/var/www/vhosts/robmenning.com/bor/bor-api/
+scp bor-app/.env* robmenning.com@xenodochial-turing.108-175-7-118.plesk.page:/var/www/vhosts/robmenning.com/bor/bor-app/
+
+# DEV ITERATIONS
+DEV:
+1. clear && ./script/app-stop.sh && ./script/app-start.sh && docker ps && docker logs bor-app
+2. git push origin <branch>
+
+PROD:
+3. logged in as robmenning.com@xenodochial-turing...
+3.a. cd ~/bor/bor-app
+3.b. git pull origin <branch>
+4. logged in as root@xenodochial-turing
+4.a. cd /var/www/vhosts/robmenning.com/bor/bor-app
+4.b. clear; ./script/app-stop.sh && ./script/app-start-prod.sh; docker ps; docker logs bor-app
+
+
+
+## running and monitoring in different environments:
+
+
+### Development Scripts
+
+
+### Docker Container Scripts
+
+
+### Usage Instructions
+
+
+## apache and nginx configuration
+DID NOT USE THIS...
+## apache and nginx configuration
+if ($http_origin ~* (.*\.robmenning.com)) {
+	set $cors "true";
+}
+
+location ~* /(sqllearn)/ {
+	if ($cors = "true") {
+		add_header 'Access-Control-Allow-Origin' "$http_origin";
+		add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, DELETE, PUT';
+		add_header 'Access-Control-Allow-Credentials' 'true';
+		add_header 'Access-Control-Allow-Headers' 'User-Agent,Keep-Alive,Content-Type';
+	}
+
+	proxy_pass http://108.175.7.118:3004;
+	proxy_set_header Upgrade $http_upgrade;
+	proxy_set_header Connection 'upgrade';
+	proxy_set_header Host $host;
+	proxy_cache_bypass $http_upgrade;
+}
+
+... USED THIS INSTEAD IN THE APACHE CONFIGURATION (BOTH THE HTTP AND HTTPS CONFIGURATIONS):
+<IfModule mod_proxy.c>
+    ProxyRequests Off
+    ProxyPreserveHost On
+    
+    <Location />
+        ProxyPass http://localhost:3004/
+        ProxyPassReverse http://localhost:3004/
+    </Location>
+</IfModule>
+
+
